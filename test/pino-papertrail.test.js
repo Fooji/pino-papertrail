@@ -267,9 +267,6 @@ function testApiTcp ({ t, connection, echo, prettify = false, expectedMessages }
     prettify
   }
 
-  console.log('Should prettify?')
-  console.log(prettify)
-
   const writeStream = createWriteStream(options)
   t.ok(writeStream)
   t.ok(connect.called)
@@ -297,8 +294,8 @@ function testApiTcp ({ t, connection, echo, prettify = false, expectedMessages }
     // should be able to write after a connection is made
     writeStream.write(`${messages.warnMessage}\n`, () => {
       t.ok(socket.write.calledTwice)
-      t.ok(socket.write.getCall(0).args[0].toString().includes(expectedMessages.infoMessage))
-      t.ok(socket.write.getCall(1).args[0].toString().includes(expectedMessages.warnMessage))
+      t.match(socket.write.getCall(0).args[0].toString(), expectedMessages.infoMessage)
+      t.match(socket.write.getCall(1).args[0].toString(), expectedMessages.warnMessage)
       // close connection
       onEndCall.lastArg()
 
@@ -330,7 +327,7 @@ test('pino-papertrail api (tcp)', (t) => testApiTcp({
       t,
       connection: 'tls',
       echo: true,
-      prettify: true,
+      prettify: { colorize: false },
       expectedMessages: { infoMessage: messages.prettifiedInfoMessage, warnMessage: messages.prettifiedWarningMessage }
     }))
   })
