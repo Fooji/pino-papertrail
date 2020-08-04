@@ -235,7 +235,7 @@ test('pino-papertrail api (udp)', (t) => {
   t.ok(api.createWriteStream(options), 'should be able to pass options')
 })
 
-function testApiTcp (t, connection, echo) {
+function testApiTcp ({ t, connection, echo, prettify = false }) {
   t.plan(11)
 
   const clock = require('@sinonjs/fake-timers').install()
@@ -263,7 +263,8 @@ function testApiTcp (t, connection, echo) {
     host: 'papertrailapp.com',
     port: '1234',
     connection: connection,
-    'message-only': false
+    'message-only': false,
+    prettify
   }
 
   const writeStream = createWriteStream(options)
@@ -293,9 +294,16 @@ function testApiTcp (t, connection, echo) {
     // should be able to write after a connection is made
     writeStream.write(`${messages.warnMessage}\n`, () => {
       t.ok(socket.write.calledTwice)
-      t.ok(socket.write.getCall(0).args[0].toString().includes(messages.infoMessage))
-      t.ok(socket.write.getCall(1).args[0].toString().includes(messages.warnMessage))
 
+      if (prettify) {
+        console.log(socket.write.getCall(0).args[0].toString())
+        console.log(socket.write.getCall(1).args[0].toString())
+        t.ok(socket.write.getCall(0).args[0].toString().includes(messages.prettifiedMessage))
+        // t.ok(socket.write.getCall(1).args[0].toString().includes(messages.prettifiedMessage))
+      } else {
+        t.ok(socket.write.getCall(0).args[0].toString().includes(messages.infoMessage))
+        t.ok(socket.write.getCall(1).args[0].toString().includes(messages.warnMessage))
+      }
       // close connection
       onEndCall.lastArg()
 
@@ -313,9 +321,95 @@ function testApiTcp (t, connection, echo) {
     })
   })
 }
+/*
+function testApiTcpPrettifiedMessage (t, connection) {
+  t.plan(11)
+
+  const clock = require('@sinonjs/fake-timers').install()
+
+  const socket = {
+    setKeepAlive: sinon.fake(),
+    setNoDelay: sinon.fake(),
+    on: sinon.fake(),
+    write: sinon.fake()
+  }
+  const connect = sinon.fake.returns(socket)
+
+  sinon.replace(connection === 'tcp' ? net : tls, 'connect', connect)
+
+  const createWriteStream = api.createWriteStream
+
+  const options = {
+    appname: 'pino-papertrail',
+    echo: false,
+    host: 'papertrailapp.com',
+    port: '1234',
+    connection: connection,
+    'message-only': false,
+    prettify: true
+  }
+
+  console.log(options)
+
+  const writeStream = createWriteStream(options)
+  t.ok(writeStream)
+  t.ok(connect.called)
+
+  t.ok(socket.on.calledTwice)
+  const onErrorCall = socket.on.getCall(0)
+  const onEndCall = socket.on.getCall(1)
+  t.ok(onErrorCall.args[0] === 'error')
+  t.ok(onEndCall.args[0] === 'end')
+
+  // connection error (refuse)
+  onErrorCall.lastArg(new Error('connect ECONNREFUSED'))
+  clock.runAll()
+
+  // should auto reconnect
+  t.ok(connect.calledTwice)
+
+  // should be able to write before a connection is made
+  writeStream.write(`${messages.infoMessage}\n`, () => {
+    t.ok(socket.write.notCalled)
+
+    // accept connection, run callback
+    connect.lastCall.lastArg()
+
+    // should be able to write after a connection is made
+    writeStream.write(`${messages.infoMessage}\n`, () => {
+      t.ok(socket.write.calledTwice)
+      t.ok(socket.write.getCall(0).args[0].toString().includes(messages.prettifiedMessage))
+      t.ok(socket.write.getCall(1).args[0].toString().includes(messages.prettifiedMessage))
+
+      // close connection
+      onEndCall.lastArg()
+
+      // should auto reconnect
+      t.ok(connect.calledTwice)
+
+      // accept connection, run callback
+      connect.lastCall.lastArg()
+
+      clock.uninstall()
+
+      sinon.restore()
+
+      t.end()
+    })
+  })
+}
+*/
 
 // sinon-using tests cannot be run concurrently
-test('pino-papertrail api (tcp)', (t) => testApiTcp(t, 'tcp', false))
+test('pino-papertrail api (tcp)', (t) => testApiTcp({ t, connection: 'tcp', echo: false }))
   .then(() => {
-    test('pino-papertrail api (tls)', (t) => testApiTcp(t, 'tls', true))
+    test('pino-papertrail api (tls)', (t) => testApiTcp({ t, connection: 'tls', echo: true, prettify: true }))
   })
+  /*
+  .then(() => {
+    test('pino-papertrail api (tcp) with prettified message', (t) => {
+      // return testApiTcpPrettifiedMessage(t, 'tcp')
+      return testApiTcp(t, 'tls', false, true)
+    })
+  })
+   */

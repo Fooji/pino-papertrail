@@ -6,5 +6,6 @@ module.exports = {
   infoMessage: '{"level":30,"time":1532081790743,"msg":"info message","pid":9118,"hostname":"Osmonds-MacBook-Pro.local","v":1}',
   warnMessage: '{"level":40,"time":1532081790744,"msg":"warning message","pid":9118,"hostname":"Osmonds-MacBook-Pro.local","v":1}',
   errorMessage: '{"level":50,"time":1532081790745,"msg":"error message","pid":9118,"hostname":"Osmonds-MacBook-Pro.local","type":"Error","stack":"Error: error message","v":1}',
-  fatalMessage: '{"level":60,"time":1532081790746,"msg":"fatal message","pid":9118,"hostname":"Osmonds-MacBook-Pro.local","v":1}'
+  fatalMessage: '{"level":60,"time":1532081790746,"msg":"fatal message","pid":9118,"hostname":"Osmonds-MacBook-Pro.local","v":1}',
+  prettifiedMessage: '[1532081790743] \u001B[32mINFO \u001B[39m (9118 on Osmonds-MacBook-Pro.local): \u001B[36minfo message\u001B[39m'
 }
